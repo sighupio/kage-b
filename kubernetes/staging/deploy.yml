@@ -22,7 +22,7 @@ spec:
       serviceAccountName: one-b
       containers:
         - name: one-b
-          image: "one-b:latest"
+          image: quay.io/sighup/one-b:latest
           imagePullPolicy: Always
           ports:
             - name: http
