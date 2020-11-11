@@ -2,8 +2,9 @@ variables:
   GIT_DEPTH: 1
 
 workflow:
+  # Start pipeline only when triggered by API
   rules:
-    - if: $ENVIRONMENT_SUFFIX
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
       when: always
     - when: never
 
@@ -13,16 +14,19 @@ stages:
 
 build_and_push_staging:
   stage: build
-  image: docker:stable
+  image: docker:git
   services:
-    - docker:dind
+    - docker:19.03-dind
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
   script:
-    - docker login -u=gitlab-ci-user -p=$GITLAB_CI_TOKEN
-    - docker build --network=host --tag reg.sighup.io/kage/one-b:$CI_COMMIT_SHORT_SHA .
+    - docker login reg.sighup.io -u=gitlab-ci-user -p=$GITLAB_CI_TOKEN
+    - docker build --tag reg.sighup.io/kage/one-b:$CI_COMMIT_SHORT_SHA .
     - docker push reg.sighup.io/kage/one-b:$CI_COMMIT_SHORT_SHA
+  tags:
+    - k8s
 
 deploy_staging:
   stage: deploy
@@ -30,8 +34,12 @@ deploy_staging:
   before_script:
     - cd kubernetes/staging
   script:
+    - echo $ENVIRONMENT_NAME
+    - echo $ENVIRONMENT_SUFFIX
     - sed -i "s/@@ENVIRONMENT_SUFFIX@@/$ENVIRONMENT_SUFFIX/g" patch/ingress-host.yml
     - kustomize build > /dev/null
     - kustomize edit set image reg.sighup.io/kage/one-b:$CI_COMMIT_SHORT_SHA
     - kustomize edit set namespace $ENVIRONMENT_NAME
     - kustomize build | kubectl apply -f -
+  tags:
+    - k8s

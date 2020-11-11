@@ -19,14 +19,15 @@ spec:
         app: one-b
         project: one-b
     spec:
-      serviceAccountName: one-b
+      imagePullSecrets:
+        - name: gitlab-registry
       containers:
         - name: one-b
           image: reg.sighup.io/kage/one-b:latest
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 8081
+              containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
