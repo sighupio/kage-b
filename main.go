@@ -15,7 +15,7 @@ func main() {
 	})
 
 	router.GET("/n", func(c *gin.Context) {
-		n := 42
+		n := 43
 		c.String(http.StatusOK, fmt.Sprint(n))
 	})
 
